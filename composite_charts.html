@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/dc/2.1.8/dc.min.css"/>
+    
+    <style>
+        div {
+            clear: left;
+        }
+    </style>
+
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/crossfilter/1.3.12/crossfilter.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/dc/2.1.8/dc.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/queue-async/1.0.7/queue.min.js"></script>
+    
+</head>
+<body>
+    
+    <!--Say if we wanted to view a particular person's spend over a period of time, and compare it with other people, all on the same graph-->
+    <div>
+        <h3>Spent Per Person Per Month</h3>
+        <div id="composite-chart"></div>
+    </div>
+    
+    <script>
+            
+        queue()
+            .defer(d3.json, "data/transactions.json")
+            .await(makeGraphs);
+        
+        function makeGraphs(error, transactionsData) {
+            var ndx = crossfilter(transactionsData);
+            var parseDate = d3.time.format("%d/%m/%Y").parse;
+            transactionsData.forEach(function(d){
+                d.date = parseDate(d.date);
+            });
+            var date_dim = ndx.dimension(dc.pluck('date'));
+            var minDate = date_dim.bottom(1)[0].date;
+            var maxDate = date_dim.top(1)[0].date;
+        
+        //deducing spend based on the name
+        function spend_by_name(name) {
+                return function(d) {
+                    //we are saying if the name equals Tom, return that person's spend
+                    if (d.name === name) {
+                        //the + symbol attempts to convert a number that is in a string format to an actual number
+                        return +d.spend;
+                    } else {
+                        return 0;
+                    }
+                };
+            }
+            
+            //deducing Tom's spend
+            var tomSpendByMonth = date_dim.group().reduceSum(spend_by_name('Tom'));
+            //deducing Bob's spend
+            var bobSpendByMonth = date_dim.group().reduceSum(spend_by_name('Bob'));
+            //deducing Alice's spend
+            var aliceSpendByMonth = date_dim.group().reduceSum(spend_by_name('Alice'));
+            
+            //create our composite chart
+            var compositeChart = dc.compositeChart('#composite-chart');
+            //once object has been created, we begin chaining our functions
+            compositeChart
+                .width(990)
+                .height(200)
+                .dimension(date_dim)
+                .x(d3.time.scale().domain([minDate, maxDate]))
+                .yAxisLabel("Spend")
+                //we are giving our chart a legend and specifying its position within the viewport
+                .legend(dc.legend().x(80).y(20).itemHeight(13).gap(5))
+                //rendering horizontal gridlines to provide more visual queues when comparing and contrasting
+                .renderHorizontalGridLines(true)
+                //use the compose() function and create our line charts inside it
+                .compose([
+                    dc.lineChart(compositeChart)
+                        //specify a color
+                        .colors('green')
+                        .group(tomSpendByMonth, 'Tom'),
+                    //repeat for Bob
+                    dc.lineChart(compositeChart)
+                        .colors('red')
+                        .group(bobSpendByMonth, 'Bob'),
+                    //repeat for Alice
+                    dc.lineChart(compositeChart)
+                        .colors('blue')
+                        .group(aliceSpendByMonth, 'Alice')
+                ])
+                //brushOn(ability to highlight areas of the chart) is true by default, we can specify it to be false
+                .brushOn(false)
+                .render();
+            
+            dc.renderAll();
+        }
+        
+    </script>
+    
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.9.2/d3.js"></script>
+</head>
+<body>
+    
+    <h1>D3 Bar Chart</h1>
+    <div id="draw-here"></div>
+    
+    <script>
+        
+        var w = 500;
+        var h = 500;
+        var barPadding = 1;
+        
+        //highest value exceeds the viewport height, so it needs to be scaled
+        var dataset = [
+            450, 100, 100, 280, 600, 25, 350, 120, 80, 130,
+            110, 105, 375, 200, 175, 170, 180, 230, 205,
+        ];
+        
+        //D3 scales - once specified, we also need to add the scales in to the value specs
+        var scale = d3.scaleLinear()
+            .domain([0, d3.max(dataset)])
+            .range([0, h]);
+        
+        //column width will be width divided by the length of the dataset
+        var colWidth = w / dataset.length;
+        //barWidth will be colWidth minus the badPadding
+        var barWidth = colWidth - barPadding;
+        
+        var svg = d3.select("#draw-here")
+            .append("svg")
+            .attr("width", w)
+            .attr("height", h);
+            
+        svg.selectAll("rect")
+            .data(dataset)
+            .enter()
+            .append("rect")
+            .attr("x", function (d, i) {
+                //width divided by the dataset.length
+                return i * colWidth;
+            })
+            //height minus datum value - ensures that the bars are aligned to the bottom
+            .attr("y", function (d) {
+                //insert scale
+                return h - scale(d);
+            })
+            //the actual datum value
+            .attr("height", function (d) {
+                //insert scale
+                return scale(d);
+            })
+            //width divided by dataset.lenght minur the badPadding value
+            .attr("width", barWidth);
+            
+            //display the actual integer values on the bars to make our bar chart more visually richer
+            svg.selectAll("text")
+                .data(dataset)
+                .enter()
+                .append("text")
+                //displays the datum on each bar
+                .text(function (d) {
+                    //don't insert scale here, as this is the actual textual value
+                    return d;
+                })
+                //aligns text to the centre of the bar
+                .attr("text-anchor", "middle")
+                //specifies x-coordinate of each value in the middle of each bar
+                .attr("x", function (d, i) {
+                    return i * colWidth + barWidth / 2;
+                })
+                //text will be 14px down from the top
+                .attr("y", function (d) {
+                    //insert scale
+                    return h - scale(d) + 14;
+                })
+                .attr("font-family", "sans-serif")
+                .attr("font-size","11px")
+                .attr("fill", "white");
+            
+    </script>
+    
+</body>
+</html>

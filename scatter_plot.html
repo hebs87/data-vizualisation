@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/dc/2.1.8/dc.min.css"/>
+    
+    <style>
+        div {
+            clear: left;
+        }
+    </style>
+
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/crossfilter/1.3.12/crossfilter.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/dc/2.1.8/dc.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/queue-async/1.0.7/queue.min.js"></script>
+    
+</head>
+<body>
+    
+    <div>
+        <h3>Transations By Date And Spend</h3>
+        <div id="scatter-plot"></div>
+    </div>
+    
+    <script>
+        
+        queue()
+            .defer(d3.json, "data/transactions.json")
+            .await(makeGraphs);
+        
+        function makeGraphs(error, transactionsData) {
+            var ndx = crossfilter(transactionsData);
+            //use a format function that comes with d3 to format the way the date is interpreted by the line graph
+            var parseDate = d3.time.format("%d/%m/%Y").parse;
+            //we iterate through each of the date entries and format the date entry - we are parsing the date entries and formatting them
+            transactionsData.forEach(function(d){
+                d.date = parseDate(d.date);
+            });
+            
+            var date_dim = ndx.dimension(dc.pluck('date'));
+            var minDate = date_dim.bottom(1)[0].date;
+            var maxDate = date_dim.top(1)[0].date;
+            //use date_dim to group and sum - return two values which will map the coordinates, so it will be a date and spend at a particular point
+            var spend_dim = ndx.dimension(function(d) {
+                //ARRAY - add values into the array, which determines which values we see when we hover over each point in console log
+                return [d.date, d.spend, d.name];
+            });
+            //group based on data and spend - represents the number of transactions of a total amount (3 x transactions of £200)
+            var spend_group = spend_dim.group();
+            //represents the total amount for all transactions of a particular amount (eg. total amount of £600)
+            //var spend_group = spend_dim.group().reduceSum(dc.pluck('spend'));
+            
+            //color code scatter plot points - one to one mapping between the domain elements and the range elements
+            var personColors = d3.scale.ordinal()
+                .domain(["Tom", "Bob", "Alice"])
+                .range(["red", "green", "blue"]);
+            
+            //allows us to see the data in Chrome Dev tools
+            console.log(spend_group.all());
+            
+            //create dc scatter plot
+            var spend_chart = dc.scatterPlot("#scatter-plot");
+            spend_chart
+                .width(768)
+                .height(480)
+                .x(d3.time.scale().domain([minDate, maxDate]))
+                .brushOn(false)
+                //scatter plot is represented by symbols, so we set the size of the symbols
+                .symbolSize(8)
+                .clipPadding(10)
+                .yAxisLabel("Amount Spent")
+                //add title for what appears when we hover over each point on the graph, [0] = d.date in the array, and so on
+                .title(function(d) {
+                    return d.key[2] + " spent " + d.key[1];
+                })
+                //colorAccessor() function and .colors() associates the colors with the particular array item (name in this instance)
+                .colorAccessor(function(d) {
+                    return d.key[2];
+                })
+                .colors(personColors)
+                .dimension(spend_dim)
+                .group(spend_group);
+            
+            dc.renderAll();
+            
+        }
+        
+    </script>
+    
+</body>
+</html>

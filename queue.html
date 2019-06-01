@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    
+    <!--dc.css link-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dc/2.1.8/dc.min.css" type="text/css" />
+
+    <style>
+        div {
+            clear: left;
+        }
+    </style>
+
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/crossfilter/1.3.12/crossfilter.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/dc/2.1.8/dc.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/queue-async/1.0.7/queue.min.js"></script>
+    
+</head>
+
+<body>
+    
+    <div>
+        <h3>Total Spend Per Person</h3>
+        <div id="per-person"></div>
+    </div>
+    
+    <script>
+    
+    //we activate queue.js and we refer to the .json external file
+    //we are basically saying go and get the transactions.js file in the data folder and bring it back in the form of d3.json
+    queue()
+        .defer(d3.json, "data/transactions.json")
+        .await(makeGraphs);
+    
+    //once the above is successful, we then call a method, which we have named above
+    //it will either return an error or return the data
+    //once that's done, it will appear to inject the transactionsData parameter inside the custom made function
+    function makeGraphs (error, transactionsData) {
+        //normal service resumes
+        //create a new crossfilter object
+        var ndx = crossfilter(transactionsData);
+        //create a new dimension
+        var name_dim = ndx.dimension(dc.pluck('name'));
+        //group and reduceSum based on that dimension
+        var total_spend_per_person = name_dim.group().reduceSum(dc.pluck('spend'));
+        
+        //create a bar chart and bind it to a particular div
+        dc.barChart("#per-person")
+            .width(300)
+            .height(150)
+            .margins({top: 10, right: 50, bottom: 30, left: 50})
+            .dimension(name_dim)
+            .group(total_spend_per_person)
+            .transitionDuration(500)
+            .x(d3.scale.ordinal())
+            .xUnits(dc.units.ordinal)
+            .xAxisLabel("Person")
+            .yAxis().ticks(4);
+        
+        //this needs to be called in order to render the chart
+        dc.renderAll();
+        
+    }
+    
+    </script>
+    
+</body>
+</html>

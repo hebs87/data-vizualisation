@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.9.2/d3.js"></script>
+</head>
+<body>
+    
+    <h1>D3 Bar Chart</h1>
+    <div id="draw-here"></div>
+    
+    <!--THIS IS WHEN THE VALUE OF THE DATASETS EXCEEDS OUR SPECIFIED HEIGHT AND WIDTH OF THE VIEWPORT-->
+    <script>
+        
+        //two types of scales - linear (for numeric values) and ordinal (for non-numeric values)
+        
+        //linear allows to work with the domain and the range
+        //domain is the boundary between the lowest and highest value represented in dataset (set to ds.max(dataset) if max data value unknown)
+        //range is the boundary within which the data can be transformed (set to h which is height of viewport if max data value unknown)
+        var scale = d3.scaleLinear()
+            .domain([0, d3.max(dataset)])
+            .range([0, h]);
+        
+        //displayed as 0
+        console.log(scale(0));
+        //scaled to 500, as that is the max height of viewport
+        console.log(scale(600));
+        //scaled to 416.6 units, as that is a percentage of the max height of viewport
+        console.log(scale(500));
+        
+    </script>
+    
+</body>
+</html>

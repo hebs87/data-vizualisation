@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    
+    <!--dc.css link-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dc/2.1.8/dc.min.css" type="text/css" />
+
+    <style>
+        div {
+            clear: left;
+        }
+    </style>
+
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/crossfilter/1.3.12/crossfilter.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/dc/2.1.8/dc.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/queue-async/1.0.7/queue.min.js"></script>
+    
+</head>
+<body>
+    
+    <div>
+        <h3>Total Spend Per Person</h3>
+        <div id="per-person-chart"></div>
+    </div>
+    
+    <div>
+        <h3>Total Spend Per Store</h3>
+        <div id="per-store-chart"></div>
+    </div>
+    
+    <div>
+        <h3>Total Spend Per State</h3>
+        <div id="per-state-chart"></div>
+    </div>
+    
+    <script>
+        
+        queue()
+            .defer(d3.json, "data/transactions.json")
+            .await(makeGraphs);
+        
+        function makeGraphs(error, transactionsData) {
+            //create instance of crossfilter
+            var ndx = crossfilter(transactionsData);
+            //determine dimensions
+            var name_dim = ndx.dimension(dc.pluck('name'));
+            //group by previous dimension and get a total spend for that dimension - group into all names and break it down to spend per name
+            var total_spend_per_person = name_dim.group().reduceSum(dc.pluck('spend'));
+            
+            dc.pieChart("#per-person-chart")
+                //specify a height - this is the amount of real estate that the pie chart takes ("breathing space" around it)
+                .height(330)
+                //specify a radius
+                .radius(90)
+                .transitionDuration(1500)
+                .dimension(name_dim)
+                .group(total_spend_per_person);
+            
+            var store_dim = ndx.dimension(dc.pluck('store'));
+            //group by previous dimension and get a total spend for that dimension - group into all names and break it down to spend per name
+            var total_spend_per_store = store_dim.group().reduceSum(dc.pluck('spend'));
+            
+            dc.pieChart("#per-store-chart")
+                //specify a height - this is the amount of real estate that the pie chart takes ("breathing space" around it)
+                .height(330)
+                //specify a radius
+                .radius(90)
+                .transitionDuration(1500)
+                .dimension(store_dim)
+                .group(total_spend_per_store);
+
+            var state_dim = ndx.dimension(dc.pluck('state'));
+            //group by previous dimension and get a total spend for that dimension - group into all names and break it down to spend per name
+            var total_spend_per_state = state_dim.group().reduceSum(dc.pluck('spend'));
+            
+            dc.pieChart("#per-state-chart")
+                //specify a height - this is the amount of real estate that the pie chart takes ("breathing space" around it)
+                .height(330)
+                //specify a radius
+                .radius(90)
+                .transitionDuration(1500)
+                .dimension(state_dim)
+                .group(total_spend_per_state);
+                
+            dc.renderAll();
+            
+        }
+        
+    </script>
+    
+</body>
+</html>
